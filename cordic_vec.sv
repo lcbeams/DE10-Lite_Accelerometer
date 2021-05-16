@@ -20,7 +20,6 @@ module CORDIC #(parameter N = 10) (
 	input 	[N-1:0] 		i_xval,		// Input x data - atan denominator
 	input 	[N-1:0] 		i_yval,		// Input y data - atan numerator
 	input					i_en,		// Enable signal
-	output logic [15:0] 	o_angle,	// Output angle in degrees
 	output logic [8:0]		o_angle_int	// Output angle integer value in degrees
 	);
 	
@@ -32,16 +31,18 @@ module CORDIC #(parameter N = 10) (
 	// -- Local variables --
 	logic signed [N+PREC-1:0] 	r_xvi	 		[NUMITER-1:0];	// Iteration array for the x-values
 	logic signed [N+PREC-1:0] 	r_yvi	 		[NUMITER-1:0];	// Iteration array for the y-values
-	wire  signed [N+PREC-1:0]	w_e_xval;						// Input data with zeros padded to improve shift accuracy
-	wire  signed [N+PREC-1:0]	w_e_yval;						// Input data with zeros padded to improve shift accuracy
+	wire  signed [N+PREC-1:0]	w_xval;							// Input data with zeros padded to improve shift accuracy
+	wire  signed [N+PREC-1:0]	w_yval;							// Input data with zeros padded to improve shift accuracy
 	logic 		 [ANGLEW-1:0]	r_ai			[NUMITER-1:0];	// Angle result during each iteration - accumulative
-	logic 		 [ANGLEW-1:0]	w_cordic_angle	[NUMITER-1:0];	// Precalcuated CORDIC angles
+	wire 		 [ANGLEW-1:0]	w_cordic_angle	[NUMITER-1:0];	// Precalcuated CORDIC angles
+	wire		 [ANGLEW-1:0]	w_angle;						// Cumulative angle in degrees
 	
 	// -- Continuous assignments --
-	assign o_angle  	= r_ai[NUMITER-1];			// Output angle is the last iteration result (accumulative angle)
-	assign o_angle_int	= o_angle[ANGLEW-1:7];		// Integer rounded output angle
-	assign w_e_xval		= {i_xval,{PREC{1'b0}}};	// Append zeroes to input data. Mitigates rounding issues.
-	assign w_e_yval		= {i_yval,{PREC{1'b0}}};	// Append zeroes to input data. Mitigates rounding issues.
+	assign w_angle  	= r_ai[NUMITER-1];			// Output angle is the last iteration result (accumulative angle)
+	assign w_xval		= {i_xval,{PREC{1'b0}}};	// Append zeroes to input data. Mitigates rounding issues.
+	assign w_yval		= {i_yval,{PREC{1'b0}}};	// Append zeroes to input data. Mitigates rounding issues.
+	assign o_angle_int	= (w_angle[6]) ? (w_angle[ANGLEW-1:7]+9'd1) : w_angle[ANGLEW-1:7];	// Integer rounded output angle
+						// w_angle[6] is the 1/2 bit. If high, round up. Othewise, round down.
 	
 	// -- Sequential logic --
 	// - Initial rotation based on the quadrant of the input (signs) -
@@ -59,27 +60,27 @@ module CORDIC #(parameter N = 10) (
 		else if (i_en) begin
 			unique case ({i_xval[N-1],i_yval[N-1]})		// Evaluate the sign bit of each input.
 				2'b00: begin	// Quadrant I - CW Rotation
-					r_xvi[0] <=  w_e_xval + w_e_yval;
-					r_yvi[0] <= -w_e_xval + w_e_yval;
+					r_xvi[0] <=  w_xval + w_yval;
+					r_yvi[0] <= -w_xval + w_yval;
 					r_ai[0]	 <= 16'b000101101_0000000;	// 45 degrees CW
 				end
 				2'b10 : begin	// Quadrant II - CW Rotation
-					r_xvi[0] <= -w_e_xval + w_e_yval;
-					r_yvi[0] <= -w_e_xval - w_e_yval;
+					r_xvi[0] <= -w_xval + w_yval;
+					r_yvi[0] <= -w_xval - w_yval;
 					r_ai[0]	 <= 16'b010000111_0000000;	// 135 degrees CW
 				end
-				2'b11 : begin	// 3rd Quadrant - CCW Rotation
-					r_xvi[0] <= -w_e_xval - w_e_yval;
-					r_yvi[0] <=  w_e_xval - w_e_yval;
+				2'b11 : begin	// Quadrant III - CCW Rotation
+					r_xvi[0] <= -w_xval - w_yval;
+					r_yvi[0] <=  w_xval - w_yval;
 					r_ai[0]	 <= -16'b010000111_0000000;	// 135 degrees CCW
 				end
-				2'b01 : begin	// 4th Quadrant - CCW Rotation
-					r_xvi[0] <=  w_e_xval - w_e_yval;
-					r_yvi[0] <=  w_e_xval + w_e_yval;
+				2'b01 : begin	// Quadrant IV - CCW Rotation
+					r_xvi[0] <=  w_xval - w_yval;
+					r_yvi[0] <=  w_xval + w_yval;
 					r_ai[0]	 <= -16'b000101101_0000000;	// 45 degrees CCW
 				end
 			endcase
-		end
+		end  // else if (i_en)
 	
 	// - Rotation iterations -
 	// Iteratively rotate the vector towards the x-axis by a CORDIC angle.
@@ -129,14 +130,13 @@ module CORDIC #(parameter N = 10) (
 		
 endmodule
 
-
+/*
 // Test Bench
 module CORDIC_TB();
 	logic clk, rst_n, en;
 	logic [9:0] xval, yval;
-	logic [15:0] angle;
 	logic [8:0] angle_i;
-	CORDIC DUT (clk, rst_n, xval, yval, en, angle, angle_i);
+	CORDIC DUT (clk, rst_n, xval, yval, en, angle_i);
 	
 	initial begin
 		en='0; xval=10'd2; yval=10'd1;
@@ -162,4 +162,4 @@ module CORDIC_TB();
 	end
 	
 endmodule
-
+*/
