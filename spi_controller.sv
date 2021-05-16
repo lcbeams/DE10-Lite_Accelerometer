@@ -38,7 +38,7 @@ module spi_controller (
   output logic       o_sclk,         // Output clock to secondary device
   inout wire         io_sdio,        // Secondary device data input and output.
   output logic       o_cs_n          // Chip select - active low. (Only one device selectable)
-	);
+  );
 
   // -- Local parameters --
   localparam MAX_SCLK_COUNT = 4'd15; // Count sixteen positive clock edges for a full transfer
@@ -94,7 +94,7 @@ module spi_controller (
         sclk_enable <= '1; // Enable output sclk
       end // if (sclk)
     end // if (~o_cs_n)
-	else begin
+    else begin
       sclk_enable <= '0;   // Disable otherwise
     end // else
   end : SclkEnable
@@ -133,17 +133,17 @@ module spi_controller (
   // Eight bits of data are written to the secondary device, then eight bits are read.
   always_ff @ (posedge i_clk) begin : TransferData
     if (~o_cs_n) begin	
-      if ((sclk_count > 7) | (~read_write_n)) begin	// Always execute if writing. If read, only writing 8 bits
-        sdio_enable <= '1;							// Enable to sdio output
+      if ((sclk_count > 7) | (~read_write_n)) begin // Always execute if writing. If read, only writing 8 bits
+        sdio_enable <= '1;                          // Enable to sdio output
         if (fall_edge) begin
           sdio <= sdio_buffer[sclk_count];          // Setup the bit on the falling edge
-		end // if (fall_edge)
+        end // if (fall_edge)
       end // if ((sclk_count > 7) | (~read_write_n))
       else begin                                    // Read data request - Read 8-bits after writing
         sdio_enable <= '0;                          // Disable the sdio output
         if (rise_edge) begin
           sdio_buffer[sclk_count] <= io_sdio;       // Register the bit on the rising edge
-		end // if (rise_edge)
+        end // if (rise_edge)
       end // else
     end // if (~os_c_n)
     else begin
@@ -156,7 +156,7 @@ module spi_controller (
   
 endmodule
 
-//   --- SPI Clock Generator Module ---
+//                  --- SPI Clock Generator Module ---
 //
 //    This module generates 'positive edge' and 'negative edge' signals
 //    to be used as register enable signals to create a pseudo divided
@@ -217,41 +217,39 @@ module spi_clock_generator (
 
 endmodule
 
-// NOTE: The code in this file has been updated for better readability.
-// NOTE: The test bench has not been updated to coincide with the readability update.
 /*
 // Test Bench
-module SPI_Controller_TB();
-	logic i_clk, i_rst_n, o_data_valid, i_spi_go, i_read_write_n, o_idle;
-	logic [15:0] i_data;
-	logic [7:0] o_data;
-	logic o_sclk, o_cs_n;
-	wire io_sdio;
-	logic io_sdio_driver;
-	logic [7:0] data_save;
-	
-	SPI_Controller DUT (i_clk, i_rst_n, o_data_valid, i_spi_go, i_read_write_n, o_idle, i_data, o_data, o_sclk, io_sdio, o_cs_n);
-	assign io_sdio = io_sdio_driver;
-	
-	initial begin
-		i_spi_go='0; i_read_write_n='0; i_data='0; io_sdio_driver=1'bz; data_save=8'b00000000;
-		i_rst_n='0; #5; i_rst_n='1; #5;
-		i_spi_go='1; i_read_write_n='0; i_data=16'b0101010101010101; #5;
-		@(negedge o_idle) @(posedge i_clk) begin i_spi_go='0; i_read_write_n='0; end
-		@(posedge o_idle) @(posedge i_clk) begin i_spi_go='1; i_read_write_n='1; i_data=16'b1010101000000000; end
-		@(negedge o_idle) @(posedge i_clk) begin i_spi_go='0; i_read_write_n='0; end
-		repeat(8) @(posedge o_sclk);
-		@(negedge o_sclk) io_sdio_driver<='1;
-		repeat (7) @(negedge o_sclk) io_sdio_driver<=~io_sdio_driver;
-		@(posedge o_data_valid) @(posedge i_clk) data_save<=o_data;
-		@(posedge o_idle) io_sdio_driver<=1'bz;
-	end
-	
-	initial begin
-		i_clk='0; #5;
-		repeat(2000)
-			repeat(2) begin i_clk=~i_clk; #5; end
-	end
+module spi_controller_tb();
+  logic i_clk, i_rst_n, o_data_valid, i_spi_go, i_read_write_n, o_idle;
+  logic [15:0] i_data;
+  logic [7:0] o_data;
+  logic o_sclk, o_cs_n;
+  wire io_sdio;
+  logic io_sdio_driver;
+  logic [7:0] data_save;
+
+  spi_controller dut (i_clk, i_rst_n, o_data_valid, i_spi_go, i_read_write_n, o_idle, i_data, o_data, o_sclk, io_sdio, o_cs_n);
+  assign io_sdio = io_sdio_driver;
+
+  initial begin
+    i_spi_go='0; i_read_write_n='0; i_data='0; io_sdio_driver=1'bz; data_save=8'b00000000;
+    i_rst_n='0; #10; i_rst_n='1; #5;
+    i_spi_go='1; i_read_write_n='0; i_data=16'b0101010101010101; #5;
+    @(negedge o_idle) @(posedge i_clk) begin i_spi_go='0; i_read_write_n='0; end
+    @(posedge o_idle) @(posedge i_clk) begin i_spi_go='1; i_read_write_n='1; i_data=16'b1010101000000000; end
+    @(negedge o_idle) @(posedge i_clk) begin i_spi_go='0; i_read_write_n='0; end
+    repeat(8) @(posedge o_sclk);
+    @(negedge o_sclk) io_sdio_driver<='1;
+    repeat (7) @(negedge o_sclk) io_sdio_driver<=~io_sdio_driver;
+    @(posedge o_data_valid) @(posedge i_clk) data_save<=o_data;
+    @(posedge o_idle) io_sdio_driver<=1'bz;
+  end
+
+  initial begin
+    i_clk='0; #5;
+    repeat(2000)
+      repeat(2) begin i_clk = ~i_clk; #5; end
+  end
 endmodule
 */
 
