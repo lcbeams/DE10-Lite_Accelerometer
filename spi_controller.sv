@@ -197,10 +197,10 @@ module spi_clock_generator (
       o_rise_edge <= '0;
       o_fall_edge <= '0;
       if (count == MAX_COUNT) begin
-        o_rise_edge <= ~clk_slow;		// Create the rising edge pulse
-        o_fall_edge <= clk_slow;		// Create the falling edge pulse
-        count <= '0;				// Reset count
-        clk_slow <= ~clk_slow;	// Invert the divided down clock - store in a register
+        o_rise_edge <= ~clk_slow; // Create the rising edge pulse
+        o_fall_edge <= clk_slow;  // Create the falling edge pulse
+        count <= '0;              // Reset count
+        clk_slow <= ~clk_slow;    // Invert the divided down clock - store in a register
       end // if (count == MAX_COUNT)
     end // else
   end : CreateClk
@@ -212,7 +212,7 @@ module spi_clock_generator (
 	end // if (~i_rst_n)
     else begin
       o_clk_slow <= clk_slow;
-	end // else
+    end // else
   end : DelayClk
 
 endmodule
