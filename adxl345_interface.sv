@@ -118,7 +118,7 @@ module adxl345_interface (
   assign spi_input_data[15:14] = {read_write_n, 1'b0};    // Second bit is MultiRead flag. Will not use.
 
   // -- Module instantations --
-  config_rom     cr	  (.i_address(config_count), .o_config_address(config_address), .o_config_value(config_value));
+  config_rom     cr   (.i_address(config_count), .o_config_address(config_address), .o_config_value(config_value));
   read_rom       rr   (.i_address(read_count), .o_read_address(read_address));
   spi_controller spic (.i_clk, .i_rst_n, .o_data_valid(spi_data_valid), .i_spi_go(spi_go), .i_read_write_n(read_write_n),
                        .o_idle(spi_idle), .i_data(spi_input_data), .o_data(spi_output_data), .o_sclk, .io_sdio, .o_cs_n);
@@ -161,9 +161,9 @@ module adxl345_interface (
             spi_go <= '1;
             if (~|config_count) begin
               config_done <= '1;
-			end else begin
+            end else begin
               config_count <= config_count - ONE;
-			end // if/else (~|config_count)
+            end // if/else (~|config_count)
             spi_state <= TRANSFER;
           end : ConfigMode
         end // IDLE
@@ -222,7 +222,8 @@ module config_rom (
   assign CONFIG_ADDRESS[0] = POWER_CTL;
 
   assign o_config_address = CONFIG_ADDRESS[i_address];
-  assign o_config_value	  = CONFIG_VALUE[i_address];
+  assign o_config_value   = CONFIG_VALUE[i_address];
+
 
 endmodule
 
@@ -256,7 +257,7 @@ module ADXL345_Interface_TB();
   wire io_sdio;
   logic io_sdio_driver;
 
-  adx_linterface dut (i_clk, i_rst_n, x_data, y_data, z_data, o_data_valid, o_sclk, io_sdio, o_cs_n, i_int1);
+  adxl_interface dut (i_clk, i_rst_n, x_data, y_data, z_data, o_data_valid, o_sclk, io_sdio, o_cs_n, i_int1);
   assign io_sdio = io_sdio_driver;
 
   initial begin
