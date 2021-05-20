@@ -224,6 +224,7 @@ module config_rom (
   assign o_config_address = CONFIG_ADDRESS[i_address];
   assign o_config_value   = CONFIG_VALUE[i_address];
 
+
 endmodule
 
 // -- Read ROM --
