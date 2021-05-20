@@ -16,7 +16,7 @@ The CORDIC algorithim convert the rectangular acceleration vectors to polar coor
 the board's roll and pitch, so the algorithm is used to compute atan(x/z) and atan(y/z) in units of degrees.
 
 A physical validation module has been developed to verify functionality of the design. The raw acceleration data is displayed to
-the onboard LEDs and the angles of rotation are displayed to the onbard 7-segment displays. The onboard slide switches can be used
+the onboard LEDs and the angles of rotation are displayed to the onboard 7-segment displays. The onboard slide switches can be used
 to toggle between displaying the x-, y-, or z-axis raw data and between displaying the roll or pitch angle.
 
 The physical validation meets timing requirements during compilation in Quartus while using the onboard 50 MHz.
